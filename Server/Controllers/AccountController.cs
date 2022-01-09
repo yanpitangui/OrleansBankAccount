@@ -20,27 +20,27 @@ public class AccountController : ControllerBase
         _grainFactory = grainFactory;
     }
 
-    [HttpGet("{itemKey}")]
-    public Task<Account> GetAsync([Required] Guid id) =>
+    [HttpGet("{id:guid}")]
+    public Task<Account?> GetAsync([Required] Guid id) =>
         _grainFactory.GetGrain<IAccountGrain>(id).GetAsync();
 
-    [HttpDelete("{itemKey}")]
+    [HttpDelete("{id:guid}")]
     public async Task DeleteAsync([Required] Guid id)
     {
         await _grainFactory.GetGrain<IAccountGrain>(id).ClearAsync();
     }
 
     [HttpGet]
-    public async Task<ImmutableArray<Account>> ListAsync()
+    public async Task<ImmutableArray<Account?>> ListAsync()
     {
         // get all item keys for this owner
         var keys = await _grainFactory.GetGrain<IAccountManagerGrain>(0).GetAllAsync();
 
         // fast path for empty owner
-        if (keys.Length == 0) return ImmutableArray<Account>.Empty;
+        if (keys.Length == 0) return ImmutableArray<Account?>.Empty;
 
         // fan out and get all individual items in parallel
-        var tasks = ArrayPool<Task<Account>>.Shared.Rent(keys.Length);
+        var tasks = ArrayPool<Task<Account?>>.Shared.Rent(keys.Length);
         try
         {
             // issue all requests at the same time
@@ -50,7 +50,7 @@ public class AccountController : ControllerBase
             }
 
             // compose the result as requests complete
-            var result = ImmutableArray.CreateBuilder<Account>(tasks.Length);
+            var result = ImmutableArray.CreateBuilder<Account?>(tasks.Length);
             for (var i = 0; i < keys.Length; ++i)
             {
                 result.Add(await tasks[i]);
@@ -59,8 +59,23 @@ public class AccountController : ControllerBase
         }
         finally
         {
-            ArrayPool<Task<Account>>.Shared.Return(tasks);
+            ArrayPool<Task<Account?>>.Shared.Return(tasks);
         }
+    }
+
+    [HttpPost("transfer/{fromAccountId:guid}/{toAccountId:guid}")]
+    public async Task<ActionResult> Transfer(Guid fromAccountId, Guid toAccountId, [FromBody] uint amount)
+    {
+        var fromAccount = _grainFactory.GetGrain<IAccountGrain>(fromAccountId);
+        var toAccount = _grainFactory.GetGrain<IAccountGrain>(toAccountId);
+
+        await Task.WhenAll(fromAccount.Withdraw(amount), toAccount.Deposit(amount));
+
+        return Ok(new
+        {
+            fromBalance = await fromAccount.GetBalance(),
+            toBalance = await toAccount.GetBalance()
+        });
     }
 
     [HttpPost]
@@ -81,7 +96,7 @@ public class AccountController : ControllerBase
         [Required]
         public string? Username { get; set; }
 
-        public int Balance { get; set; }
+        public uint Balance { get; set; }
     }
 
 }

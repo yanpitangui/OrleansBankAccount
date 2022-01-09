@@ -31,27 +31,37 @@ public class AccountGrain : Grain, IAccountGrain
         _state = state;
     }
 
-    public Task<Account> GetAsync() => Task.FromResult(_state.State.Item);
+    public Task<Account?> GetAsync() => Task.FromResult(_state.State.Item);
 
 
-    public Task Deposit(uint amount) => _balance.PerformUpdate(x =>
+    public async Task Deposit(uint amount)
     {
-        _logger.LogInformation("Depositing {0} amount into account {1}", amount, this.GetPrimaryKey());
-        return x.Value += amount;
-    });
-
-    public Task Withdraw(uint amount) => _balance.PerformUpdate(x =>
-    {
-        _logger.LogInformation("Withdrawing {0} amount from account {1}", amount, this.GetPrimaryKey());
-        if (x.Value < amount)
+        await _balance.PerformUpdate(x =>
         {
-            throw new InvalidOperationException(
-                $"Withdrawing {amount} credits from account \"{this.GetPrimaryKey()}\" would overdraw it."
-                + $" This account has {x.Value} credits.");
-        }
+            _logger.LogInformation("Depositing {0} amount into account {1}", amount, this.GetPrimaryKey());
+            return x.Value += amount;
+        });
+        _state.State.Item!.Balance = await GetBalance();
+        await _state.WriteStateAsync();
+    }
 
-        x.Value -= amount;
-    });
+    public async Task Withdraw(uint amount)
+    {
+        await _balance.PerformUpdate(x =>
+        {
+            _logger.LogInformation("Withdrawing {0} amount from account {1}", amount, this.GetPrimaryKey());
+            if (x.Value < amount)
+            {
+                throw new InvalidOperationException(
+                    $"Withdrawing {amount} credits from account \"{this.GetPrimaryKey()}\" would overdraw it."
+                    + $" This account has {x.Value} credits.");
+            }
+
+            x.Value -= amount;
+        });
+        _state.State.Item!.Balance = await GetBalance();
+        await _state.WriteStateAsync();
+    }
 
     public Task<uint> GetBalance() => _balance.PerformRead(x => x.Value);
     

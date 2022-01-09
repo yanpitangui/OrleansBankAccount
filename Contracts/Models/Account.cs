@@ -2,7 +2,7 @@
 
 public class Account
 {
-    public Account(Guid key, string userName, int balance)
+    public Account(Guid key, string userName, uint balance)
     {
         Key = key;
         UserName = userName;
@@ -13,6 +13,6 @@ public class Account
 
     public string UserName { get; set; }
 
-    public int Balance { get; set; }
+    public uint Balance { get; set; }
 }
 

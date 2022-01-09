@@ -5,17 +5,17 @@ namespace Contracts;
 
 public interface IAccountGrain : IGrainWithGuidKey
 {
-    [Transaction(TransactionOption.Join)]
+    [Transaction(TransactionOption.CreateOrJoin)]
     Task Withdraw(uint amount);
 
-    [Transaction(TransactionOption.Join)]
+    [Transaction(TransactionOption.CreateOrJoin)]
     Task Deposit(uint amount);
 
     [Transaction(TransactionOption.CreateOrJoin)]
     Task<uint> GetBalance();
 
     Task SetAsync(Account item);
-    Task<Account> GetAsync();
+    Task<Account?> GetAsync();
 
     Task ClearAsync();
 }
