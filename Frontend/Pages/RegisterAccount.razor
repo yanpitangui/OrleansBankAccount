@@ -1,0 +1,55 @@
+﻿@page "/registerAccount"
+@using Frontend.Services
+@inject IBankService _bankService
+@inject NavigationManager _navigationManager
+<h2>Register account</h2>
+<hr />
+<div class="container my-4">
+	<div class="row">
+        <div class="col-lg-6 offset-lg-3">
+            <RadzenTemplateForm TItem="AccountViewModel" Data=@_account Submit=@CreateAccount>
+                <RadzenFieldset Text="Account information">
+                    <div class="row mb-5">
+                        <div class="col-md-4">
+                            <RadzenLabel Text="UserName" />
+                            <small style="display: block">(3-10 characters)</small>
+                        </div>
+                        <div class="col">
+	                        <RadzenTextBox style="display: block" Name="UserName" @bind-Value=@_account.UserName Class="w-100" />
+	                        <RadzenRequiredValidator Component="UserName" Text="UserName name is required" Popup=@true Style="position: absolute"/>
+	                        <RadzenRegexValidator Component="UserName" Text="Username must only contains alphabets, numbers or underscore" Pattern="^[A-Za-z][A-Za-z0-9_]{2,9}$" Popup=@true Style="position: absolute" />
+                        </div>
+                    </div>
+                    <div class="row mb-5">
+                        <div class="col-md-4">
+                            <RadzenLabel Text="Balance" />
+                        </div>
+                        <div class="col">
+                            <RadzenNumeric TValue="decimal" Format="c" style="display: block" Name="Balance" @bind-Value=@_account.Balance Class="w-100" />
+                            <RadzenNumericRangeValidator Component="Balance" Min="0" Text="Balance should be equal or greater than 0" Popup=@true Style="position: absolute" />
+
+                        </div>
+                    </div>
+	                <RadzenButton ButtonType="ButtonType.Submit" Text="Submit"></RadzenButton>
+	                <RadzenButton ButtonStyle="ButtonStyle.Danger" Click="args => Cancel()"  Text="Cancel"></RadzenButton>
+
+                </RadzenFieldset>
+            </RadzenTemplateForm>
+        </div>
+    </div>
+</div>
+
+@code {
+	AccountViewModel _account = new AccountViewModel();
+
+
+	protected async Task CreateAccount()
+	{
+		await _bankService.CreateAccount(_account.UserName, _account.Balance);
+		_navigationManager.NavigateTo("/");
+	}
+	void Cancel()
+	{
+		_navigationManager.NavigateTo("/");
+	}
+}

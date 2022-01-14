@@ -1,0 +1,64 @@
+﻿@page "/"
+@using Frontend.Services
+@inject IBankService _bankService
+@inject NavigationManager _navigationManager
+@inject DialogService dialogService
+
+
+<PageTitle>Account manager</PageTitle>
+<h1>Registed accounts</h1>
+<p>
+	<RadzenButton Click="args => NavigateToRegister()" Text="Add New" Icon="add_circle_outline" ButtonStyle="ButtonStyle.Primary" />
+</p>
+
+@if (accounts == null)
+{
+	<p><em>Loading...</em></p>
+}
+else
+{
+	<RadzenDataGrid Data="@accounts" TItem="AccountViewModel"
+	                AllowSorting="true"
+	                AllowPaging="true">
+		<Columns>
+			<RadzenDataGridColumn TItem="AccountViewModel" Property="Key" Title="Id"/>
+			<RadzenDataGridColumn TItem="AccountViewModel" Property="UserName" Title="UserName"/>
+			<RadzenDataGridColumn TItem="AccountViewModel" Property="Balance" Title="Balance">
+				<Template Context="data">
+					@data?.Balance.ToString("C")
+				</Template>
+			</RadzenDataGridColumn>
+			<RadzenDataGridColumn TItem="AccountViewModel" Title="Actions">
+				<Template Context="data">
+					<RadzenButton Click="async args => await Transfer(data)" Text="Transfer" Class="w-100" />
+				</Template>
+
+			</RadzenDataGridColumn>
+
+		</Columns>
+	</RadzenDataGrid>
+}
+
+@code {
+	private IEnumerable<AccountViewModel>? accounts;
+
+	private void NavigateToRegister()
+	{
+		_navigationManager.NavigateTo("/registerAccount");
+	}
+
+	protected override async Task OnInitializedAsync()
+	{
+		accounts = await _bankService.ListAccounts();
+	}
+
+	private async Task Transfer(AccountViewModel account)
+	{
+		await dialogService.OpenAsync<TransferPage>($"Transfer amount",
+			new Dictionary<string, object>() { { "AccountId", account.Key } },
+			new DialogOptions() { Width = "1024px", Height = "570px", Resizable = true, Draggable = true });
+	}
+
+
+
+}

@@ -10,7 +10,7 @@ namespace Server.Grains;
 [Serializable]
 public class Balance
 {
-    public uint Value { get; set; } = 0;
+    public decimal Value { get; set; } = 0;
 }
 
 public class AccountGrain : Grain, IAccountGrain
@@ -34,7 +34,7 @@ public class AccountGrain : Grain, IAccountGrain
     public Task<Account?> GetAsync() => Task.FromResult(_state.State.Item);
 
 
-    public async Task Deposit(uint amount)
+    public async Task Deposit(decimal amount)
     {
         await _balance.PerformUpdate(x =>
         {
@@ -45,7 +45,7 @@ public class AccountGrain : Grain, IAccountGrain
         await _state.WriteStateAsync();
     }
 
-    public async Task Withdraw(uint amount)
+    public async Task Withdraw(decimal amount)
     {
         await _balance.PerformUpdate(x =>
         {
@@ -63,7 +63,7 @@ public class AccountGrain : Grain, IAccountGrain
         await _state.WriteStateAsync();
     }
 
-    public Task<uint> GetBalance() => _balance.PerformRead(x => x.Value);
+    public Task<decimal> GetBalance() => _balance.PerformRead(x => x.Value);
     
     public async Task SetAsync(Account item)
     {

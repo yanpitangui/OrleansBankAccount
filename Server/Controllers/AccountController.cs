@@ -15,6 +15,7 @@ public class AccountController : ControllerBase
 {
     private readonly IGrainFactory _grainFactory;
 
+
     public AccountController(IGrainFactory grainFactory, ILogger<AccountController> logger)
     {
         _grainFactory = grainFactory;
@@ -64,13 +65,13 @@ public class AccountController : ControllerBase
     }
 
     [HttpPost("transfer/{fromAccountId:guid}/{toAccountId:guid}")]
-    public async Task<ActionResult> Transfer(Guid fromAccountId, Guid toAccountId, [FromBody] uint amount)
+    public async Task<ActionResult> Transfer(Guid fromAccountId, Guid toAccountId, [FromBody] decimal amount)
     {
         var fromAccount = _grainFactory.GetGrain<IAccountGrain>(fromAccountId);
         var toAccount = _grainFactory.GetGrain<IAccountGrain>(toAccountId);
+        var atm = _grainFactory.GetGrain<IAtmGrain>(0);
 
-        await Task.WhenAll(fromAccount.Withdraw(amount), toAccount.Deposit(amount));
-
+        await atm.Transfer(fromAccount, toAccount, amount);
         return Ok(new
         {
             fromBalance = await fromAccount.GetBalance(),
@@ -96,7 +97,8 @@ public class AccountController : ControllerBase
         [Required]
         public string? Username { get; set; }
 
-        public uint Balance { get; set; }
+        [Range(0, Double.MaxValue)]
+        public decimal Balance { get; set; }
     }
 
 }
