@@ -68,9 +68,9 @@ public class AccountController : ControllerBase
     {
         var fromAccount = _grainFactory.GetGrain<IAccountGrain>(fromAccountId);
         var toAccount = _grainFactory.GetGrain<IAccountGrain>(toAccountId);
+        var atm = _grainFactory.GetGrain<IAtmGrain>(0);
 
-        await Task.WhenAll(fromAccount.Withdraw(amount), toAccount.Deposit(amount));
-
+        await atm.Transfer(fromAccount, toAccount, amount);
         return Ok(new
         {
             fromBalance = await fromAccount.GetBalance(),

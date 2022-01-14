@@ -1,0 +1,45 @@
+﻿@page "/"
+@using Frontend.Services
+@inject IBankService _bankService
+
+<PageTitle>Account manager</PageTitle>
+<h1>Registed accounts</h1>
+<p>
+	<a href="/registerAccount">Create new account</a>
+</p>
+
+@if (accounts == null)
+{
+	<p><em>Loading...</em></p>
+}
+else
+{
+	<table class="table">
+		<thead>
+		<tr>
+			<th>Id</th>
+			<th>Username</th>
+			<th>Balance</th>
+		</tr>
+		</thead>
+		<tbody>
+		@foreach (var account in accounts)
+		{
+			<tr>
+				<td>@account.Key</td>
+				<td>@account.UserName</td>
+				<td>@account.Balance.ToString("C")</td>
+			</tr>
+		}
+		</tbody>
+	</table>
+}
+
+@code {
+	private IEnumerable<AccountViewModel>? accounts;
+
+	protected override async Task OnInitializedAsync()
+	{
+		accounts = await _bankService.ListAccounts();
+	}
+}

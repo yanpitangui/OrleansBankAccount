@@ -1,0 +1,46 @@
+﻿@page "/registerAccount"
+@using Frontend.Services
+@inject IBankService _bankService
+@inject NavigationManager _navigationManager
+<h2>Criar Aluno</h2>
+<hr />
+<EditForm Model="@_account" OnValidSubmit="CreateAccount">
+	<DataAnnotationsValidator />
+	<ValidationSummary />
+	<div class="row">
+		<div class="col-md-8">
+			<div class="form-group">
+				<label for="UserName" class="control-label">UserName</label>
+				<InputText @bind-Value="@_account.UserName" class="form-control" />
+				<ValidationMessage For="@(()=> _account.UserName)" />
+			</div>
+			<div class="form-group">
+				<label for="Balance" class="control-label">Balance</label> 
+				<InputNumber @bind-Value="@_account.Balance" class="form-control" />
+				<ValidationMessage For="@(()=> _account.Balance)" />
+			</div>
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-md-4">
+			<div class="form-group">
+				<input type="submit" class="btn btn-primary" value="Salvar" />
+				<input type="button" class="btn" @onclick="@Cancel" value="Cancelar" />
+			</div>
+		</div>
+	</div>
+</EditForm>
+@code {
+	AccountViewModel _account = new AccountViewModel();
+
+
+	protected async Task CreateAccount()
+	{
+		await _bankService.CreateAccount(_account.UserName, _account.Balance);
+		_navigationManager.NavigateTo("/");
+	}
+	void Cancel()
+	{
+		_navigationManager.NavigateTo("/");
+	}
+}

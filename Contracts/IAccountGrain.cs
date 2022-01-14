@@ -5,10 +5,10 @@ namespace Contracts;
 
 public interface IAccountGrain : IGrainWithGuidKey
 {
-    [Transaction(TransactionOption.CreateOrJoin)]
+    [Transaction(TransactionOption.Join)]
     Task Withdraw(uint amount);
 
-    [Transaction(TransactionOption.CreateOrJoin)]
+    [Transaction(TransactionOption.Join)]
     Task Deposit(uint amount);
 
     [Transaction(TransactionOption.CreateOrJoin)]
