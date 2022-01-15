@@ -19,25 +19,25 @@
 	                        <RadzenRequiredValidator Component="UserName" Text="UserName name is required" Popup=@true Style="position: absolute"/>
 	                        <RadzenRegexValidator Component="UserName" Text="Username must only contains alphabets, numbers or underscore" Pattern="^[A-Za-z][A-Za-z0-9_]{2,9}$" Popup=@true Style="position: absolute" />
                         </div>
-                    </div>
+			</div>
                     <div class="row mb-5">
                         <div class="col-md-4">
                             <RadzenLabel Text="Balance" />
-                        </div>
+			</div>
                         <div class="col">
                             <RadzenNumeric TValue="decimal" Format="c" style="display: block" Name="Balance" @bind-Value=@_account.Balance Class="w-100" />
                             <RadzenNumericRangeValidator Component="Balance" Min="0" Text="Balance should be equal or greater than 0" Popup=@true Style="position: absolute" />
 
-                        </div>
-                    </div>
+		</div>
+	</div>
 	                <RadzenButton ButtonType="ButtonType.Submit" Text="Submit"></RadzenButton>
 	                <RadzenButton ButtonStyle="ButtonStyle.Danger" Click="args => Cancel()"  Text="Cancel"></RadzenButton>
 
                 </RadzenFieldset>
             </RadzenTemplateForm>
-        </div>
-    </div>
-</div>
+			</div>
+		</div>
+	</div>
 
 @code {
 	AccountViewModel _account = new AccountViewModel();
