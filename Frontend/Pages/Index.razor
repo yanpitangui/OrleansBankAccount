@@ -30,7 +30,7 @@ else
 			</RadzenDataGridColumn>
 			<RadzenDataGridColumn TItem="AccountViewModel" Title="Actions">
 				<Template Context="data">
-					<RadzenButton Click="async args => await Transfer(data)" Text="Transfer" Class="w-100" />
+					<RadzenButton Click="async args => await OpenTransferModal(data)" Text="Transfer" Class="w-100" />
 				</Template>
 
 			</RadzenDataGridColumn>
@@ -52,7 +52,7 @@ else
 		accounts = await _bankService.ListAccounts();
 	}
 
-	private async Task Transfer(AccountViewModel account)
+	private async Task OpenTransferModal(AccountViewModel account)
 	{
 		await dialogService.OpenAsync<TransferPage>($"Transfer amount",
 			new Dictionary<string, object>() { { "AccountId", account.Key } },

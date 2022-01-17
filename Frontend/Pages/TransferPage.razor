@@ -1,6 +1,7 @@
 ﻿@page "/transfer/{AccountId}"
 @using Frontend.Services
-@inject DialogService dialogService
+@inject DialogService _dialogService
+@inject NotificationService _notificationService
 @inject IBankService _bankService
 
 
@@ -10,8 +11,9 @@
             <h3 class="h5">From</h3>
             <div class="d-flex flex-row">
 	            <div>
-		            <RadzenDropDown Disabled=@true AllowClear="false" TValue="Guid" Class="w-100"
-		                            TextProperty="Key" ValueProperty="Key" SelectedItem="_accountFrom" />
+		            <RadzenDropDown AllowClear="false" TValue="Guid" Class="w-100" @bind-value="@AccountId"
+									Data="_accounts"
+		                            TextProperty="Key" ValueProperty="Key" Change="@(ChangeOriginAccount)"/>
 		            <div>Username</div>
 		            <b>@(_accountFrom?.UserName)</b>
 		            <div class="mt-3">Balance</div>
@@ -24,39 +26,45 @@
         <RadzenCard Style="width: 100%; overflow: hidden;">
             <h3 class="h5">To</h3>
 	        <div class="d-flex flex-row">
-		        <div>
-			        <RadzenDropDown Data="_accounts?.Where(x => x.Key != AccountId)" TValue="Guid" AllowClear="false" Class="w-100"
-			                        TextProperty="Key" ValueProperty="Key" Change="@(ChangeDestinationAccount)" />
-			        <div>Username</div>
-			        <b>@(_accountTo?.UserName)</b>
-			        <div class="mt-3">Balance</div>
-			        <RadzenBadge BadgeStyle="BadgeStyle.Secondary" Text="@_accountTo?.Balance.ToString("C")"/>
-		        </div>
+				@if (_accounts?.Count() <= 1)
+				{
+					<div>
+						<b> No other account was found for you to transfer.</b>
+					</div>
+				}
+				else
+				{
+					<div>
+						<RadzenDropDown Data="_accounts?.Where(x => x.Key != AccountId)" TValue="Guid" AllowClear="false" Class="w-100"
+						                TextProperty="Key" ValueProperty="Key" Change="@(ChangeDestinationAccount)"/>
+						<div>Username</div>
+						<b>@(_accountTo?.UserName)</b>
+						<div class="mt-3">Balance</div>
+						<RadzenBadge BadgeStyle="BadgeStyle.Secondary" Text="@_accountTo?.Balance.ToString("C")"/>
+					</div>
+				}
 	        </div>
         </RadzenCard>
     </div>
 </div>
 <div class="row my-4">
     <div class="col-md-12">
-        <RadzenCard>
-            <h3 class="h5">
-                Account @AccountId Details
-            </h3>
-@*            <RadzenDataGrid AllowFiltering="true" AllowPaging="true" AllowSorting="true" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
-                        Data="@(orderDetails.Where(o => o.OrderID == OrderID))" TItem="OrderDetail" ColumnWidth="200px" Class="mt-3">
-                <Columns>
-                    <RadzenDataGridColumn TItem="OrderDetail" Property="Quantity" Title="Quantity" />
-                    <RadzenDataGridColumn TItem="OrderDetail" Property="Order.OrderDate" Title="Order Date" />
-                    <RadzenDataGridColumn TItem="OrderDetail" Property="Discount" Title="Discount" FormatString="{0:P}" />
-                </Columns>
-            </RadzenDataGrid>*@
-        </RadzenCard>
-    </div>
-</div>
-<div class="row">
-    <div class="col-md-12 text-right">
-        <RadzenButton Click="@((args) => dialogService.Close(false))" ButtonStyle="ButtonStyle.Secondary" Text="Cancel" Style="width: 120px" Class="mr-1" />
-        <RadzenButton Click="@((args) => dialogService.Close(true))" Text="OK" Style="width: 120px" />
+	    <RadzenTemplateForm TItem="TransferModel" Data=@_model Submit=@TransferAmount>
+		    <RadzenFieldset Text="Transfer information">
+			    <div class="row mb-5">
+				    <div class="col-md-4">
+					    <RadzenLabel Text="Amount" />
+				    </div>
+				    <div class="col">
+					    <RadzenNumeric TValue="decimal" Format="c" style="display: block" Name="Amount" @bind-Value=@_model.Amount Class="w-100" />
+					    <RadzenNumericRangeValidator Component="Amount" Min="(decimal)0.01" Text="Amount should be greater than 0" Popup=@true Style="position: absolute" />
+				    </div>
+			    </div>
+			    <RadzenButton ButtonType="ButtonType.Submit" Text="Submit"></RadzenButton>
+			    <RadzenButton ButtonStyle="ButtonStyle.Danger" Click="args => CloseModal()" Text="Cancel"></RadzenButton>
+
+		    </RadzenFieldset>
+	    </RadzenTemplateForm>
     </div>
 </div>
 
@@ -67,7 +75,9 @@
 	private AccountViewModel? _accountFrom;
 	private AccountViewModel? _accountTo;
 
-	public IEnumerable<AccountViewModel> _accounts;
+	private IEnumerable<AccountViewModel>? _accounts;
+
+	private TransferModel? _model = new TransferModel();
 
 	protected override async Task OnInitializedAsync()
 	{
@@ -79,6 +89,73 @@
 	{
 		if (Guid.TryParse(Convert.ToString(args), out var accountToId))
 			_accountTo = _accounts.FirstOrDefault(x => x.Key == accountToId);
+	}
+
+	private void ChangeOriginAccount(object args)
+	{
+		if (Guid.TryParse(Convert.ToString(args), out var accountFromId))
+			_accountFrom = _accounts.FirstOrDefault(x => x.Key == accountFromId);
+	}
+
+	public class TransferModel
+	{
+		public Guid? AccountTo { get; set; }
+
+		public Guid? AccountFrom { get; set; }
+
+		public decimal Amount { get; set; }
+	}
+
+	private async Task TransferAmount()
+	{
+		try
+		{
+			var result = await _bankService.TransferAmount(_model.AccountFrom, _model.AccountTo, _model.Amount);
+			if (result.IsSuccessStatusCode)
+			{
+				ShowNotification(new NotificationMessage
+				{
+					Severity = NotificationSeverity.Success, 
+					Summary = "Success!", 
+					Detail = "Your transfer has been confirmed.",
+					Duration = 4000
+				});
+				CloseModal();
+
+			}
+			else
+			{
+				ShowNotification(new NotificationMessage
+				{
+					Severity = NotificationSeverity.Error, 
+					Summary = "Something went wrong!", 
+					Detail = "Please check the information you provided.",
+					Duration = 4000
+				});
+			}
+
+
+		}
+		catch (Exception ex)
+		{
+			ShowNotification(new NotificationMessage
+			{
+				Severity = NotificationSeverity.Error, 
+				Summary = "An error has occurred during the transaction.", 
+				Detail = ex.Message, 
+				Duration = 4000
+			});
+		}
+	}
+
+	void ShowNotification(NotificationMessage message)
+	{
+		_notificationService.Notify(message);
+	}
+
+	private void CloseModal()
+	{
+		_dialogService.Close();
 	}
 
 }
