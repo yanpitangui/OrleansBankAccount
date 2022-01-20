@@ -1,6 +1,7 @@
 ﻿@page "/registerAccount"
 @using Frontend.Services
 @inject IBankService _bankService
+@inject NotificationService _notificationService
 @inject NavigationManager _navigationManager
 <h2>Register account</h2>
 <hr />
@@ -45,11 +46,51 @@
 
 	protected async Task CreateAccount()
 	{
-		await _bankService.CreateAccount(_account.UserName, _account.Balance);
-		_navigationManager.NavigateTo("/");
+		try
+		{
+			var result = await _bankService.CreateAccount(_account.UserName, _account.Balance);
+			if (result.IsSuccessStatusCode)
+			{
+				ShowNotification(new NotificationMessage
+				{
+					Severity = NotificationSeverity.Success,
+					Summary = "Success!",
+					Detail = "Your account has been created successfully.",
+					Duration = 4000
+				});
+				_navigationManager.NavigateTo("/");
+
+			}
+			else
+			{
+				ShowNotification(new NotificationMessage
+				{
+					Severity = NotificationSeverity.Error, 
+					Summary = "Something went wrong!", 
+					Detail = "Please check the information you provided.",
+					Duration = 4000
+				});
+			}
+		}
+		catch (Exception ex)
+		{
+			ShowNotification(new NotificationMessage
+			{
+				Severity = NotificationSeverity.Error, 
+				Summary = "An error has occurred during the transaction.", 
+				Detail = ex.Message, 
+				Duration = 4000
+			});
+		}
+
 	}
 	void Cancel()
 	{
 		_navigationManager.NavigateTo("/");
+	}
+
+	void ShowNotification(NotificationMessage message)
+	{
+		_notificationService.Notify(message);
 	}
 }

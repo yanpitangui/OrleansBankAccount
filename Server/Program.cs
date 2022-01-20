@@ -1,4 +1,5 @@
 using Contracts;
+using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json.Linq;
 using Serilog;
 using Orleans;
@@ -6,6 +7,7 @@ using Orleans.Hosting;
 using Serilog.Events;
 using Serilog.Exceptions;
 using Serilog.Sinks.SystemConsole.Themes;
+using Server;
 using Server.Grains;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,6 +20,7 @@ var logger = ConfigureBaseLogging()
 
 // Register Serilog
 builder.Logging.AddSerilog(logger);
+
 
 // Register orleans
 builder.Host.UseOrleans(siloBuilder =>
@@ -34,7 +37,7 @@ builder.Host.UseOrleans(siloBuilder =>
 
     siloBuilder.UseDashboard(options =>
     {
-        options.Port = 8000;
+        options.Port = 9000;
     });
 });
 
@@ -43,8 +46,10 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddScoped<ErrorHandlingMiddleware>();
 
 var app = builder.Build();
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -59,6 +64,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+app.UseMiddleware(typeof(ErrorHandlingMiddleware));
 await app.RunAsync();
 
 LoggerConfiguration ConfigureBaseLogging()

@@ -16,8 +16,6 @@
 		                            TextProperty="Key" ValueProperty="Key" Change="@(ChangeOriginAccount)"/>
 		            <div>Username</div>
 		            <b>@(_accountFrom?.UserName)</b>
-		            <div class="mt-3">Balance</div>
-		            <RadzenBadge BadgeStyle="BadgeStyle.Secondary" Text="@_accountFrom?.Balance.ToString("C")"/>
 	            </div>
             </div>
         </RadzenCard>
@@ -39,8 +37,6 @@
 						                TextProperty="Key" ValueProperty="Key" Change="@(ChangeDestinationAccount)"/>
 						<div>Username</div>
 						<b>@(_accountTo?.UserName)</b>
-						<div class="mt-3">Balance</div>
-						<RadzenBadge BadgeStyle="BadgeStyle.Secondary" Text="@_accountTo?.Balance.ToString("C")"/>
 					</div>
 				}
 	        </div>
@@ -48,25 +44,83 @@
     </div>
 </div>
 <div class="row my-4">
-    <div class="col-md-12">
-	    <RadzenTemplateForm TItem="TransferModel" Data=@_model Submit=@TransferAmount>
-		    <RadzenFieldset Text="Transfer information">
-			    <div class="row mb-5">
-				    <div class="col-md-4">
-					    <RadzenLabel Text="Amount" />
-				    </div>
-				    <div class="col">
-					    <RadzenNumeric TValue="decimal" Format="c" style="display: block" Name="Amount" @bind-Value=@_model.Amount Class="w-100" />
-					    <RadzenNumericRangeValidator Component="Amount" Min="(decimal)0.01" Text="Amount should be greater than 0" Popup=@true Style="position: absolute" />
-				    </div>
-			    </div>
-			    <RadzenButton ButtonType="ButtonType.Submit" Text="Submit"></RadzenButton>
-			    <RadzenButton ButtonStyle="ButtonStyle.Danger" Click="args => CloseModal()" Text="Cancel"></RadzenButton>
+	<div class="col-md-12">
+		<RadzenTemplateForm TItem="TransferModel" Data=@_model Submit=@TransferAmount>
+			<RadzenFieldset Text="Transfer information">
+				<div class="row mb-5">
+					<div class="col-md-4">
+						<RadzenLabel Text="Amount" />
+					</div>
+					<div class="col">
+						<RadzenNumeric TValue="decimal" Format="C" style="display: block" Name="Amount" @bind-Value=@_model.Amount Class="w-100" />
+						<RadzenNumericRangeValidator Component="Amount" Min="(decimal)0.01" Text="Amount should be greater than 0" Popup=@true Style="position: absolute" />
 
-		    </RadzenFieldset>
-	    </RadzenTemplateForm>
-    </div>
+					</div>
+				</div>
+				<RadzenCard Style="width: 100%; padding: 0; overflow: hidden;">
+					<div class="container">
+						<div class="row">
+							<div class="col-lg-3 p-3 username">
+								@(_accountFrom?.UserName)
+							</div>
+							<div class="col-lg-7 p-3">
+								<div class="row d-flex">
+									<div class="col-md-6 order-first order-lg-last col-lg-6">
+										<RadzenBadge BadgeStyle="BadgeStyle.Success" Class="balance" Text=@($"{_accountFrom?.Balance:C}") />
+									</div>
+									<div class="col-md-6 order-first order-lg-last col-lg-6">
+										<RadzenBadge BadgeStyle="BadgeStyle.Danger" Class="balance" Text=@($"{(_model?.Amount > _accountFrom?.Balance ? '-' : string.Empty)}{_accountFrom?.Balance - _model?.Amount:C}") />
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</RadzenCard>
+				<RadzenCard Style="width: 100%; padding: 0; overflow: hidden;">
+					<div class="container">
+						<div class="row">
+							<div class="col-lg-3 p-3 username">
+								@(_accountTo?.UserName)
+							</div>
+							<div class="col-lg-7 p-3">
+								<div class="row d-flex">
+									<div class="col-md-6 order-first order-lg-last col-lg-6">
+										<RadzenBadge BadgeStyle="BadgeStyle.Success" Class="balance" Text=@($"{_accountTo?.Balance:C}") />
+									</div>
+									<div class="col-md-6 order-first order-lg-last col-lg-6">
+										<RadzenBadge BadgeStyle="BadgeStyle.Secondary" Class="balance" Text=@($"{_accountTo?.Balance + _model?.Amount:C}") />
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</RadzenCard>
+				<br/>
+				<RadzenButton ButtonType="ButtonType.Submit" Text="Submit"></RadzenButton>
+				<RadzenButton ButtonStyle="ButtonStyle.Danger" Click="args => CloseModal()" Text="Cancel"></RadzenButton>
+
+			</RadzenFieldset>
+		</RadzenTemplateForm>
+	</div>
 </div>
+
+<style>
+	.username {
+		min-height: 72px;
+		color: #da0074;
+		background-color: rgba(255, 41, 155, .1);
+		font-size: 20px;
+		font-weight: bold;
+		line-height: 20px;
+		letter-spacing: -0.02em;
+	}
+	.balance {
+		font-size: 16px;
+		font-weight: bold;
+		line-height: 20px;
+		padding: 8px;
+	}
+</style>
 
 @code {
 	[Parameter] 
@@ -83,18 +137,28 @@
 	{
 		_accounts = await _bankService.ListAccounts();
 		_accountFrom = _accounts?.FirstOrDefault(x => x.Key == AccountId);
+		_model.AccountFrom = AccountId;
 	}
 
 	private void ChangeDestinationAccount(object args)
 	{
 		if (Guid.TryParse(Convert.ToString(args), out var accountToId))
+		{
 			_accountTo = _accounts.FirstOrDefault(x => x.Key == accountToId);
+			_model.AccountTo = accountToId;
+		}
+		
 	}
 
 	private void ChangeOriginAccount(object args)
 	{
 		if (Guid.TryParse(Convert.ToString(args), out var accountFromId))
+		{
 			_accountFrom = _accounts.FirstOrDefault(x => x.Key == accountFromId);
+			_model.AccountFrom = accountFromId;
+			AccountId = accountFromId;
+
+		}
 	}
 
 	public class TransferModel

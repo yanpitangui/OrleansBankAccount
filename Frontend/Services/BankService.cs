@@ -9,7 +9,7 @@ public class BankService : IBankService
         _client = httpClientFactory.CreateClient("bankApi");
     }
 
-    public Task CreateAccount(string userName, decimal balance)
+    public Task<HttpResponseMessage> CreateAccount(string userName, decimal balance)
     {
         return _client
             .PostAsJsonAsync("/api/account", new AccountViewModel(Guid.Empty, userName, balance));

@@ -14,7 +14,9 @@ public interface IAccountGrain : IGrainWithGuidKey
     [Transaction(TransactionOption.CreateOrJoin)]
     Task<decimal> GetBalance();
 
+    [Transaction(TransactionOption.CreateOrJoin)]
     Task SetAsync(Account item);
+
     Task<Account?> GetAsync();
 
     Task ClearAsync();

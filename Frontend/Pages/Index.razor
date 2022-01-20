@@ -49,6 +49,11 @@ else
 
 	protected override async Task OnInitializedAsync()
 	{
+		await LoadAccounts();
+	}
+
+	private async Task LoadAccounts()
+	{
 		accounts = await _bankService.ListAccounts();
 	}
 
@@ -57,6 +62,7 @@ else
 		await dialogService.OpenAsync<TransferPage>($"Transfer amount",
 			new Dictionary<string, object>() { { "AccountId", account.Key } },
 			new DialogOptions() { Width = "1024px", Height = "570px", Resizable = true, Draggable = true });
+		await LoadAccounts();
 	}
 
 
